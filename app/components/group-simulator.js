@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import QualificationScenarios from "./qualification-scenarios";
 import { getGroupMatches, groupTeamIds } from "@/lib/groups";
+import {
+  analyzeTeamQualification,
+  createProjectedQualificationResult,
+  createQualificationExplanations,
+} from "@/lib/scenarios";
 import { simulateGroup } from "@/lib/simulator";
 import {
   BLANK_SCORE,
@@ -34,6 +40,12 @@ function findFirstOpenGroup(payload) {
       ),
     ) ?? GROUPS[0]
   );
+}
+
+function getInitialSelection(payload) {
+  const group = findFirstOpenGroup(payload);
+  const groupedTeams = groupTeamIds(payload.teams);
+  return { group, teamId: groupedTeams[group]?.[0] ?? null };
 }
 
 function LoadingState() {
@@ -184,13 +196,16 @@ export default function GroupSimulator() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState("A");
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [predictionsByGroup, setPredictionsByGroup] = useState({});
 
   const loadData = useCallback(async () => {
     try {
       const payload = await requestTournamentData();
+      const selection = getInitialSelection(payload);
       setData(payload);
-      setSelectedGroup(findFirstOpenGroup(payload));
+      setSelectedGroup(selection.group);
+      setSelectedTeamId(selection.teamId);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "The live feed could not be loaded.");
     } finally {
@@ -203,8 +218,10 @@ export default function GroupSimulator() {
     requestTournamentData()
       .then((payload) => {
         if (!active) return;
+        const selection = getInitialSelection(payload);
         setData(payload);
-        setSelectedGroup(findFirstOpenGroup(payload));
+        setSelectedGroup(selection.group);
+        setSelectedTeamId(selection.teamId);
       })
       .catch((loadError) => {
         if (!active) return;
@@ -263,6 +280,7 @@ export default function GroupSimulator() {
         matches,
         remainingMatches,
         predictionState,
+        completedPredictionCount: predictions.length,
         current,
         projected,
         tieNotice: getUnresolvedTieNotice(projected),
@@ -273,6 +291,48 @@ export default function GroupSimulator() {
       };
     }
   }, [data, predictionsByGroup, selectedGroup]);
+
+  const qualificationAnalysis = useMemo(() => {
+    if (!data || !selectedTeamId) return null;
+    try {
+      const groupedTeams = groupTeamIds(data.teams);
+      const teamIds = groupedTeams[selectedGroup] ?? [];
+      const matches = getGroupMatches(data.matches, selectedGroup);
+      return analyzeTeamQualification(teamIds, matches, selectedTeamId);
+    } catch (analysisError) {
+      return {
+        error:
+          analysisError instanceof Error
+            ? analysisError.message
+            : "Qualification scenarios could not be calculated.",
+      };
+    }
+  }, [data, selectedGroup, selectedTeamId]);
+
+  const qualificationExplanations = useMemo(() => {
+    if (!qualificationAnalysis || qualificationAnalysis.error || !data) return [];
+    return createQualificationExplanations(qualificationAnalysis, data.teams);
+  }, [data, qualificationAnalysis]);
+
+  const projectedQualification = useMemo(() => {
+    if (
+      !qualificationAnalysis ||
+      qualificationAnalysis.error ||
+      !groupModel?.projected ||
+      !selectedTeamId
+    ) {
+      return null;
+    }
+    return createProjectedQualificationResult(
+      groupModel.projected,
+      selectedTeamId,
+      {
+        completedPredictionCount: groupModel.completedPredictionCount,
+        remainingMatchCount: groupModel.remainingMatches.length,
+        currentStatus: qualificationAnalysis.overallStatus,
+      },
+    );
+  }, [groupModel, qualificationAnalysis, selectedTeamId]);
 
   function updateScore(matchId, side, value) {
     setPredictionsByGroup((allGroups) => {
@@ -293,6 +353,21 @@ export default function GroupSimulator() {
     }));
   }
 
+  function selectGroup(group) {
+    setSelectedGroup(group);
+    if (data?.teams[selectedTeamId]?.group !== group) {
+      const groupedTeams = groupTeamIds(data.teams);
+      setSelectedTeamId(groupedTeams[group]?.[0] ?? null);
+    }
+  }
+
+  function selectTeam(teamId) {
+    const team = data?.teams[teamId];
+    if (!team) return;
+    setSelectedTeamId(teamId);
+    setSelectedGroup(team.group);
+  }
+
   function handleGroupTabKeyDown(event) {
     const currentIndex = GROUPS.indexOf(selectedGroup);
     let nextIndex = null;
@@ -305,17 +380,28 @@ export default function GroupSimulator() {
 
     event.preventDefault();
     const nextGroup = GROUPS[nextIndex];
-    setSelectedGroup(nextGroup);
+    selectGroup(nextGroup);
     document.getElementById(`group-tab-${nextGroup}`)?.focus();
   }
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={retryLoad} />;
 
-  if (!data || groupModel?.error) {
+  if (
+    !data ||
+    groupModel?.error ||
+    qualificationAnalysis?.error ||
+    !selectedTeamId ||
+    !qualificationAnalysis ||
+    !projectedQualification
+  ) {
     return (
       <ErrorState
-        message={groupModel?.error || "The group data is missing or malformed."}
+        message={
+          groupModel?.error ||
+          qualificationAnalysis?.error ||
+          "The group data is missing or malformed."
+        }
         onRetry={retryLoad}
       />
     );
@@ -338,12 +424,22 @@ export default function GroupSimulator() {
             aria-selected={selectedGroup === group}
             aria-controls="group-simulator-panel"
             tabIndex={selectedGroup === group ? 0 : -1}
-            onClick={() => setSelectedGroup(group)}
+            onClick={() => selectGroup(group)}
           >
             <span>Group</span> {group}
           </button>
         ))}
       </div>
+
+      <QualificationScenarios
+        teams={data.teams}
+        selectedTeamId={selectedTeamId}
+        onTeamChange={selectTeam}
+        analysis={qualificationAnalysis}
+        explanations={qualificationExplanations}
+        projectedResult={projectedQualification}
+        onReset={resetSelectedGroup}
+      />
 
       <section
         id="group-simulator-panel"

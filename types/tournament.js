@@ -47,6 +47,7 @@
  * @property {number} points
  * @property {number} position
  * @property {boolean} unresolvedTie
+ * @property {string|null} unresolvedTieKey
  */
 
 /**
@@ -75,4 +76,3 @@ export const QUALIFICATION_STATUS = Object.freeze({
   ELIMINATED: "eliminated",
   CONTESTED: "contested",
 });
-

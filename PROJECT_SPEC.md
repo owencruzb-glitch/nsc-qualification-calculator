@@ -101,11 +101,11 @@ Unresolved sporting ties require special care. Scenario summaries track boundary
 - API objects and caller-owned inputs are never mutated.
 - Modules use JavaScript with JSDoc models, matching the existing repository.
 - Lint and production build must pass before delivery.
-- No interface is part of this architecture milestone.
+- Qualification analysis must describe bounded possibilities, never probability.
 
 ## UI milestones
 
-The Group Simulator is the first working interface milestone. The Qualification Scenarios interface remains future work.
+The Group Simulator and Qualification Scenarios are the two supported interface milestones. Qualification paths share simulator state but remain visually and conceptually distinct from the user's projected result.
 
 ### Acceptance criteria
 
