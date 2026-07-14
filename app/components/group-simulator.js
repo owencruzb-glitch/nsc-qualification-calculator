@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import QualificationScenarios from "./qualification-scenarios";
 import MatchPredictor from "./match-predictor";
+import KnockoutBracket from "./knockout-bracket";
 import StandingsTable from "./standings-table";
+import { calculateBracketSeedTables } from "@/lib/bracket";
 import { getGroupMatches, groupTeamIds } from "@/lib/groups";
 import {
   analyzeTeamQualification,
@@ -215,6 +217,24 @@ export default function GroupSimulator() {
     );
   }, [groupModel, qualificationAnalysis, selectedTeamId]);
 
+  const bracketSeedTables = useMemo(() => {
+    if (!data) return null;
+    try {
+      return calculateBracketSeedTables(
+        data.teams,
+        data.matches,
+        predictionsByGroup,
+      );
+    } catch (bracketError) {
+      return {
+        error:
+          bracketError instanceof Error
+            ? bracketError.message
+            : "The knockout bracket could not be seeded.",
+      };
+    }
+  }, [data, predictionsByGroup]);
+
   function updateScore(matchId, side, value) {
     setPredictionsByGroup((allGroups) => {
       const currentState =
@@ -411,6 +431,21 @@ export default function GroupSimulator() {
         onReset={resetSelectedGroup}
         hasPredictions={hasEnteredPredictions}
       />
+
+      {bracketSeedTables?.error ? (
+        <aside className="tie-notice" role="status">
+          <strong>Bracket unavailable</strong>
+          <p>{bracketSeedTables.error}</p>
+        </aside>
+      ) : bracketSeedTables ? (
+        <KnockoutBracket
+          teams={data.teams}
+          knockoutMatches={data.matches}
+          currentStandings={bracketSeedTables.current}
+          projectedStandings={bracketSeedTables.projected}
+          projectedAvailable={bracketSeedTables.projectedAvailable}
+        />
+      ) : null}
 
       <p className="data-note">
         Live source updated {new Date(data.updatedAt).toLocaleString(undefined, {

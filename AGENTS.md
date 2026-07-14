@@ -6,6 +6,7 @@ Build a focused companion to the Neighborhood World Cup website. This project ow
 
 1. Qualification Scenarios
 2. Group Simulator
+3. Knockout Bracket Simulator
 
 Do not duplicate the source website's schedule, live standings, top scorers, or general tournament coverage.
 
@@ -34,6 +35,9 @@ Do not duplicate the source website's schedule, live standings, top scorers, or 
 - Preserve unresolved ties explicitly. A stable team-id fallback may make output deterministic, but must not be presented as a sporting tie-break.
 - Qualification scenario enumeration must be bounded. Reject work above the configured combination limit instead of freezing the app.
 - Keep qualification count and score bounds configurable even though the current tournament advances two teams per group.
+- Seed knockout matches from the API's published group-position placeholders, never from hard-coded current team names.
+- QF1/QF3 feed SF1; QF2/QF4 feed SF2. Semifinal winners feed the final and losers feed third place.
+- Clear downstream knockout selections whenever a changed seed or earlier winner makes them ineligible.
 
 ## Development workflow
 

@@ -14,7 +14,7 @@ export default function Home() {
       <section className="hero" id="simulator">
         <div>
           <p className="eyebrow">Neighborhood World Cup · Qualification companion</p>
-          <h1>Two tools.<br />One clear path.</h1>
+          <h1>Three tools.<br />One clear path.</h1>
         </div>
         <p className="hero-copy">
           Simulate the final group matches, then see exactly what every team needs.
@@ -22,6 +22,7 @@ export default function Home() {
         <nav className="tool-index" aria-label="Page tools">
           <a href="#group-simulator"><span>01</span> Group Simulator</a>
           <a href="#qualification-scenarios"><span>02</span> Qualification Scenarios</a>
+          <a href="#knockout-bracket"><span>03</span> Knockout Bracket</a>
         </nav>
       </section>
 

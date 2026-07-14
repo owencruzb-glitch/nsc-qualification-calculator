@@ -22,12 +22,18 @@ NSC Qualification Calculator is a companion website for the Neighborhood World C
 - Recalculate the group table immediately from final results plus those predictions.
 - Allow predictions to be changed or removed without mutating source data.
 
+#### Knockout Bracket Simulator
+
+- Seed the four quarterfinals from either official or fully projected group standings.
+- Let visitors select winners through the quarterfinals, semifinals, third-place match, and final.
+- Clear downstream selections whenever a changed seed or earlier winner makes them invalid.
+- Use the live API's knockout match IDs, labels, dates, times, and pairing placeholders.
+
 ### Out of scope
 
 - Match schedule pages
 - Live standings pages
 - Top-scorer pages
-- Knockout bracket simulation
 - Live match commentary or streaming
 - Editing tournament data
 
@@ -70,6 +76,7 @@ types/        Shared JSDoc domain models and constants
 3. `lib/simulator.js` applies valid predictions to unfinished matches.
 4. `lib/standings.js` calculates and ranks table rows.
 5. `lib/scenarios.js` enumerates bounded remaining results and summarizes qualification states.
+6. `lib/bracket.js` parses published quarterfinal pairings, seeds the bracket, advances winners and losers, and sanitizes downstream selections.
 
 ## Public calculation capabilities
 
@@ -81,6 +88,37 @@ types/        Shared JSDoc domain models and constants
 - Enumerate bounded possible scorelines.
 - Calculate best/worst finishing positions and qualification frequency.
 - Classify teams as `qualified`, `eliminated`, or `contested` when the explored result space is exhaustive.
+- Seed quarterfinals from the published group-position placeholders.
+- Advance quarterfinal and semifinal selections without mutating tournament data.
+- Route semifinal losers to third place and winners to the final.
+
+## Knockout bracket
+
+### Confirmed quarterfinal pairings
+
+The live API was inspected on July 13, 2026. Its published placeholders are:
+
+- `qf1` — Quarterfinal 1: Winner Group A vs Runner-up Group B; July 14 at 7:00 PM.
+- `qf2` — Quarterfinal 2: Winner Group B vs Runner-up Group A; July 14 at 8:00 PM.
+- `qf3` — Quarterfinal 3: Winner Group C vs Runner-up Group D; July 15 at 7:00 PM.
+- `qf4` — Quarterfinal 4: Winner Group D vs Runner-up Group C; July 15 at 8:00 PM.
+
+Current team IDs in knockout records are live data, not bracket configuration. Seeding is derived from group standings and the placeholders above so simulated group results can replace current seeds without hard-coded team names.
+
+### Progression
+
+- `qf1` winner and `qf3` winner advance to `sf1`.
+- `qf2` winner and `qf4` winner advance to `sf2`.
+- `sf1` and `sf2` winners advance to `final`.
+- `sf1` and `sf2` losers advance to `third`.
+- Changing a seed or winner invalidates and clears every downstream selection that is no longer eligible.
+
+### Seeding source and assumptions
+
+- Official current standings seed the bracket until every unfinished group match has a complete prediction.
+- Once all group predictions are complete, projected standings can seed the bracket; the interface labels the active source and allows a reset to current standings.
+- The API publishes overtime followed by MLS-style penalties, but the simulator records only a selected winner; it does not model scores, overtime, or penalty details.
+- When published group tiebreakers leave seeding unresolved, the bracket inherits the standings engine's deterministic display order. That order is not presented as a confirmed sporting tiebreak.
 
 ## Scenario constraints
 
@@ -105,7 +143,7 @@ Unresolved sporting ties require special care. Scenario summaries track boundary
 
 ## UI milestones
 
-The Group Simulator and Qualification Scenarios are the two supported interface milestones. Qualification paths share simulator state but remain visually and conceptually distinct from the user's projected result.
+The Group Simulator, Qualification Scenarios, and Knockout Bracket Simulator are the three supported interface milestones. Qualification paths and bracket seeding share simulator state but remain visually and conceptually distinct from the user's projected result.
 
 ### Acceptance criteria
 
@@ -113,4 +151,6 @@ The Group Simulator and Qualification Scenarios are the two supported interface 
 - Loading, stale-data timestamp, empty, and API-error states are visible.
 - Every simulated score can be reset.
 - Qualification claims distinguish certainty from unresolved tie-break outcomes.
+- The bracket identifies whether seeds come from current or projected group standings.
+- No downstream bracket winner remains selected after that team becomes ineligible.
 - Mobile and keyboard usage are supported.

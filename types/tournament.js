@@ -18,12 +18,18 @@
  * @typedef {object} Match
  * @property {string} id
  * @property {TournamentStage|string} stage
+ * @property {string=} label
+ * @property {string=} placeholder
+ * @property {string=} date
+ * @property {string=} time
  * @property {string|null=} group
  * @property {string|null} home
  * @property {string|null} away
  * @property {number|null} homeScore
  * @property {number|null} awayScore
  * @property {MatchStatus|string} status
+ * @property {string|null=} half
+ * @property {Array<object>=} scorers
  */
 
 /**
