@@ -77,6 +77,7 @@ export default function QualificationScenarios({
           <select
             id="qualification-team"
             value={selectedTeamId}
+            aria-describedby="qualification-team-help"
             onChange={(event) => onTeamChange(event.target.value)}
           >
             {GROUPS.map((group) => (
@@ -90,6 +91,9 @@ export default function QualificationScenarios({
               </optgroup>
             ))}
           </select>
+          <p className="field-help" id="qualification-team-help">
+            A team is selected to get you started. Choose another to compare its current position and clearest path.
+          </p>
         </div>
       </div>
 

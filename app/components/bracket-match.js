@@ -14,6 +14,16 @@ const ROUND_NAMES = {
   final: "Final",
 };
 
+function getUndeterminedMessage(stage) {
+  if (stage === "sf") {
+    return "Select the required quarterfinal winners to populate this match.";
+  }
+  if (stage === "third" || stage === "final") {
+    return "Select both semifinal winners to populate finals night.";
+  }
+  return "Complete the group standings to determine both teams.";
+}
+
 export default function BracketMatch({ match, teams, onSelectWinner }) {
   const availableTeams = match.teams.filter(Boolean);
 
@@ -59,7 +69,7 @@ export default function BracketMatch({ match, teams, onSelectWinner }) {
           ? `Winner: ${teams[match.selectedWinner]?.name ?? match.selectedWinner}`
           : availableTeams.length === 2
             ? "Winner not selected"
-            : "Teams not yet determined"}
+            : getUndeterminedMessage(match.stage)}
       </p>
     </article>
   );

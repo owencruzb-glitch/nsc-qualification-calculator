@@ -411,7 +411,9 @@ export default function GroupSimulator() {
             </div>
           )}
           <p className="prediction-note">
-            A match is included once both score fields are filled. Knockout matches are excluded.
+            <strong>Blank is not 0–0.</strong> Empty fields preserve the official standings;
+            enter zero in both fields to predict a scoreless draw. A match is included only
+            when both scores are filled.
           </p>
           </section>
 
