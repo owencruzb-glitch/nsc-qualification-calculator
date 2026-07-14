@@ -65,7 +65,7 @@ export default function QualificationScenarios({
     >
       <div className="qualification-intro">
         <div className="qualification-title">
-          <div className="tool-number" aria-hidden="true">02</div>
+          <div className="tool-number" aria-hidden="true">01</div>
           <div>
             <p className="eyebrow">Choose a team, read the path</p>
             <h2 id="qualification-heading">Qualification Scenarios</h2>

@@ -316,13 +316,24 @@ export default function GroupSimulator() {
 
   return (
     <>
+      <QualificationScenarios
+        teams={data.teams}
+        selectedTeamId={selectedTeamId}
+        onTeamChange={selectTeam}
+        analysis={qualificationAnalysis}
+        explanations={qualificationExplanations}
+        projectedResult={projectedQualification}
+        onReset={resetSelectedGroup}
+        hasPredictions={hasEnteredPredictions}
+      />
+
       <section
         className="tool-section simulator-section"
         id="group-simulator"
         aria-labelledby="simulator-heading"
       >
         <div className="tool-heading">
-          <div className="tool-number" aria-hidden="true">01</div>
+          <div className="tool-number" aria-hidden="true">02</div>
           <div>
             <p className="eyebrow">Enter the remaining scores</p>
             <h2 id="simulator-heading">Group Simulator</h2>
@@ -420,17 +431,6 @@ export default function GroupSimulator() {
           <p>{groupModel.tieNotice}</p>
         </aside>
       )}
-
-      <QualificationScenarios
-        teams={data.teams}
-        selectedTeamId={selectedTeamId}
-        onTeamChange={selectTeam}
-        analysis={qualificationAnalysis}
-        explanations={qualificationExplanations}
-        projectedResult={projectedQualification}
-        onReset={resetSelectedGroup}
-        hasPredictions={hasEnteredPredictions}
-      />
 
       {bracketSeedTables?.error ? (
         <aside className="tie-notice" role="status">

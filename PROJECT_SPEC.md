@@ -143,11 +143,11 @@ Unresolved sporting ties require special care. Scenario summaries track boundary
 
 ## UI milestones
 
-The Group Simulator, Qualification Scenarios, and Knockout Bracket Simulator are the three supported interface milestones. Qualification paths and bracket seeding share simulator state but remain visually and conceptually distinct from the user's projected result.
+Qualification Scenarios, Group Simulator, and Knockout Bracket Simulator are the three supported interface milestones, presented in that order. Qualification paths and bracket seeding share simulator state but remain visually and conceptually distinct from the user's projected result.
 
 ### Acceptance criteria
 
-- The interface exposes only Qualification Scenarios and Group Simulator.
+- The interface exposes only Qualification Scenarios, Group Simulator, and Knockout Bracket Simulator.
 - Loading, stale-data timestamp, empty, and API-error states are visible.
 - Every simulated score can be reset.
 - Qualification claims distinguish certainty from unresolved tie-break outcomes.
