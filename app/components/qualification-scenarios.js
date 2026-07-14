@@ -30,6 +30,14 @@ function chooseOtherMatchFocus(analysis) {
   return null;
 }
 
+const STATUS_PRIORITY = {
+  Guaranteed: 0,
+  Possible: 1,
+  "Needs help": 2,
+  Impossible: 3,
+  "Unresolved tie": 4,
+};
+
 export default function QualificationScenarios({
   teams,
   selectedTeamId,
@@ -38,16 +46,31 @@ export default function QualificationScenarios({
   explanations,
   projectedResult,
   onReset,
+  hasPredictions,
 }) {
   const focus = chooseOtherMatchFocus(analysis);
   const selectedTeam = teams[selectedTeamId];
+  const prioritizedExplanations = [...explanations]
+    .sort(
+      (a, b) =>
+        (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99),
+    )
+    .slice(0, 5);
 
   return (
-    <section className="qualification-section" aria-labelledby="qualification-heading">
+    <section
+      className="qualification-section tool-section"
+      id="qualification-scenarios"
+      aria-labelledby="qualification-heading"
+    >
       <div className="qualification-intro">
-        <div>
-          <p className="eyebrow">Qualification scenarios</p>
-          <h2 id="qualification-heading">What does {selectedTeam.name} need?</h2>
+        <div className="qualification-title">
+          <div className="tool-number" aria-hidden="true">02</div>
+          <div>
+            <p className="eyebrow">Choose a team, read the path</p>
+            <h2 id="qualification-heading">Qualification Scenarios</h2>
+            <p className="selected-team-question">What does {selectedTeam.name} need?</p>
+          </div>
         </div>
         <div className="team-select-field">
           <label htmlFor="qualification-team">Choose a team</label>
@@ -91,7 +114,7 @@ export default function QualificationScenarios({
             <StatusBadge status={analysis.overallStatus} />
           </div>
           <ul className="scenario-list">
-            {explanations.map((explanation, index) => (
+            {prioritizedExplanations.map((explanation, index) => (
               <li key={`${explanation.status}-${index}`}>
                 <StatusBadge status={explanation.status} />
                 <p>{explanation.text}</p>
@@ -122,8 +145,13 @@ export default function QualificationScenarios({
             <div><dt>Points</dt><dd>{projectedResult.row.points}</dd></div>
             <div><dt>Goal difference</dt><dd>{formatGoalDifference(projectedResult.row.goalDifference)}</dd></div>
           </dl>
-          <button className="scenario-reset" type="button" onClick={onReset}>
-            Reset to current standings
+          <button
+            className="scenario-reset"
+            type="button"
+            onClick={onReset}
+            disabled={!hasPredictions}
+          >
+            Reset predictions
           </button>
         </article>
       </div>

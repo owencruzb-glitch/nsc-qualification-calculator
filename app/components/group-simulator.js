@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import QualificationScenarios from "./qualification-scenarios";
+import MatchPredictor from "./match-predictor";
+import StandingsTable from "./standings-table";
 import { getGroupMatches, groupTeamIds } from "@/lib/groups";
 import {
   analyzeTeamQualification,
@@ -10,11 +12,9 @@ import {
 } from "@/lib/scenarios";
 import { simulateGroup } from "@/lib/simulator";
 import {
-  BLANK_SCORE,
   createBlankPredictionState,
   createStandingsDisplay,
   getUnresolvedTieNotice,
-  normalizeScoreInput,
   toCompletePredictions,
   updatePredictionScore,
 } from "@/lib/simulatorUi";
@@ -69,125 +69,6 @@ function ErrorState({ message, onRetry }) {
         Try again
       </button>
     </section>
-  );
-}
-
-function Stepper({ inputId, label, value, onChange }) {
-  const numericValue = value === BLANK_SCORE ? 0 : value;
-
-  return (
-    <div className="score-field">
-      <label htmlFor={inputId}>{label}</label>
-      <div className="stepper">
-        <button
-          type="button"
-          aria-label={`Decrease ${label}`}
-          onClick={() => onChange(Math.max(0, numericValue - 1))}
-          disabled={numericValue === 0}
-        >
-          −
-        </button>
-        <input
-          id={inputId}
-          type="number"
-          inputMode="numeric"
-          min="0"
-          step="1"
-          value={value}
-          placeholder="–"
-          aria-label={label}
-          onChange={(event) => {
-            try {
-              onChange(normalizeScoreInput(event.target.value));
-            } catch {
-              // Native number inputs can briefly emit invalid text; keep the last valid score.
-            }
-          }}
-        />
-        <button
-          type="button"
-          aria-label={`Increase ${label}`}
-          onClick={() => onChange(numericValue + 1)}
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StandingsTable({ title, rows, teams, projected }) {
-  return (
-    <section className={`table-card ${projected ? "projected" : ""}`}>
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">{projected ? "Updates instantly" : "From final results"}</p>
-          <h2>{title}</h2>
-        </div>
-        {projected && <span className="live-pill">Projection</span>}
-      </div>
-      <div className="table-wrap">
-        <table>
-          <caption className="sr-only">{title}</caption>
-          <thead>
-            <tr>
-              <th scope="col">Pos</th>
-              <th scope="col">Team</th>
-              <th scope="col">P</th>
-              <th scope="col">GD</th>
-              <th scope="col">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.teamId}
-                className={row.qualifies ? "qualifying-row" : undefined}
-              >
-                <td>
-                  <span className="position">{row.position}</span>
-                </td>
-                <th scope="row">
-                  <span className="team-name">{teams[row.teamId].name}</span>
-                  <span className="row-status">{row.qualificationLabel}</span>
-                  {row.tieMessage && <span className="tie-label">Tie unresolved</span>}
-                </th>
-                <td>{row.played}</td>
-                <td>{row.goalDifference > 0 ? "+" : ""}{row.goalDifference}</td>
-                <td><strong>{row.points}</strong></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="table-key"><span aria-hidden="true" /> Top two qualify</p>
-    </section>
-  );
-}
-
-function MatchPredictor({ match, teams, scores, onScoreChange }) {
-  return (
-    <article className="match-card">
-      <div className="match-meta">
-        <span>Remaining match</span>
-        <time dateTime={`${match.date} ${match.time}`}>{match.date} · {match.time}</time>
-      </div>
-      <div className="match-teams">
-        <Stepper
-          inputId={`score-${match.id}-home`}
-          label={`${teams[match.home].name} predicted score`}
-          value={scores.homeScore}
-          onChange={(value) => onScoreChange(match.id, "homeScore", value)}
-        />
-        <span className="versus" aria-hidden="true">vs</span>
-        <Stepper
-          inputId={`score-${match.id}-away`}
-          label={`${teams[match.away].name} predicted score`}
-          value={scores.awayScore}
-          onChange={(value) => onScoreChange(match.id, "awayScore", value)}
-        />
-      </div>
-    </article>
   );
 }
 
@@ -353,6 +234,12 @@ export default function GroupSimulator() {
     }));
   }
 
+  const hasEnteredPredictions = groupModel?.predictionState
+    ? Object.values(groupModel.predictionState).some(
+        (scores) => scores.homeScore !== "" || scores.awayScore !== "",
+      )
+    : false;
+
   function selectGroup(group) {
     setSelectedGroup(group);
     if (data?.teams[selectedTeamId]?.group !== group) {
@@ -409,64 +296,68 @@ export default function GroupSimulator() {
 
   return (
     <>
-      <div
-        className="group-tabs"
-        role="tablist"
-        aria-label="Tournament groups"
-        onKeyDown={handleGroupTabKeyDown}
-      >
-        {GROUPS.map((group) => (
-          <button
-            key={group}
-            id={`group-tab-${group}`}
-            type="button"
-            role="tab"
-            aria-selected={selectedGroup === group}
-            aria-controls="group-simulator-panel"
-            tabIndex={selectedGroup === group ? 0 : -1}
-            onClick={() => selectGroup(group)}
-          >
-            <span>Group</span> {group}
-          </button>
-        ))}
-      </div>
-
-      <QualificationScenarios
-        teams={data.teams}
-        selectedTeamId={selectedTeamId}
-        onTeamChange={selectTeam}
-        analysis={qualificationAnalysis}
-        explanations={qualificationExplanations}
-        projectedResult={projectedQualification}
-        onReset={resetSelectedGroup}
-      />
-
       <section
-        id="group-simulator-panel"
-        role="tabpanel"
-        aria-labelledby={`group-tab-${selectedGroup}`}
-        tabIndex={0}
-        className="simulator-grid"
+        className="tool-section simulator-section"
+        id="group-simulator"
+        aria-labelledby="simulator-heading"
       >
-        <StandingsTable
-          title={`Group ${selectedGroup} now`}
-          rows={groupModel.current}
-          teams={data.teams}
-        />
+        <div className="tool-heading">
+          <div className="tool-number" aria-hidden="true">01</div>
+          <div>
+            <p className="eyebrow">Enter the remaining scores</p>
+            <h2 id="simulator-heading">Group Simulator</h2>
+          </div>
+          <p>See how each result changes the table.</p>
+        </div>
 
-        <section className="prediction-panel">
+        <div
+          className="group-tabs"
+          role="tablist"
+          aria-label="Tournament groups"
+          onKeyDown={handleGroupTabKeyDown}
+        >
+          {GROUPS.map((group) => (
+            <button
+              key={group}
+              id={`group-tab-${group}`}
+              type="button"
+              role="tab"
+              aria-selected={selectedGroup === group}
+              aria-controls="group-simulator-panel"
+              tabIndex={selectedGroup === group ? 0 : -1}
+              onClick={() => selectGroup(group)}
+            >
+              <span>Group</span> {group}
+            </button>
+          ))}
+        </div>
+
+        <div
+          id="group-simulator-panel"
+          role="tabpanel"
+          aria-labelledby={`group-tab-${selectedGroup}`}
+          tabIndex={0}
+          className="simulator-grid"
+        >
+          <StandingsTable
+            title={`Group ${selectedGroup} now`}
+            rows={groupModel.current}
+            teams={data.teams}
+          />
+
+          <section className="prediction-panel">
           <div className="section-heading prediction-heading">
             <div>
               <p className="eyebrow">Your call</p>
-              <h2>Predict the remaining matches</h2>
+              <h3>Predict the remaining matches</h3>
             </div>
             <button
               className="reset-button"
               type="button"
               onClick={resetSelectedGroup}
-              disabled={groupModel.remainingMatches.length === 0}
+              disabled={!hasEnteredPredictions}
             >
-              Reset group
+              Reset predictions
             </button>
           </div>
 
@@ -491,14 +382,16 @@ export default function GroupSimulator() {
           <p className="prediction-note">
             A match is included once both score fields are filled. Knockout matches are excluded.
           </p>
-        </section>
+          </section>
 
-        <StandingsTable
-          title={`Projected Group ${selectedGroup}`}
-          rows={groupModel.projected}
-          teams={data.teams}
-          projected
-        />
+          <StandingsTable
+            title={`Projected Group ${selectedGroup}`}
+            rows={groupModel.projected}
+            teams={data.teams}
+            baselineRows={groupModel.current}
+            projected
+          />
+        </div>
       </section>
 
       {groupModel.tieNotice && (
@@ -507,6 +400,17 @@ export default function GroupSimulator() {
           <p>{groupModel.tieNotice}</p>
         </aside>
       )}
+
+      <QualificationScenarios
+        teams={data.teams}
+        selectedTeamId={selectedTeamId}
+        onTeamChange={selectTeam}
+        analysis={qualificationAnalysis}
+        explanations={qualificationExplanations}
+        projectedResult={projectedQualification}
+        onReset={resetSelectedGroup}
+        hasPredictions={hasEnteredPredictions}
+      />
 
       <p className="data-note">
         Live source updated {new Date(data.updatedAt).toLocaleString(undefined, {

@@ -13,13 +13,16 @@ export default function Home() {
 
       <section className="hero" id="simulator">
         <div>
-          <p className="eyebrow">Neighborhood World Cup · Group stage</p>
-          <h1>What happens<br />if they win?</h1>
+          <p className="eyebrow">Neighborhood World Cup · Qualification companion</p>
+          <h1>Two tools.<br />One clear path.</h1>
         </div>
         <p className="hero-copy">
-          Set the scores for the matches still to play. The table recalculates
-          instantly using the tournament’s published tiebreakers.
+          Simulate the final group matches, then see exactly what every team needs.
         </p>
+        <nav className="tool-index" aria-label="Page tools">
+          <a href="#group-simulator"><span>01</span> Group Simulator</a>
+          <a href="#qualification-scenarios"><span>02</span> Qualification Scenarios</a>
+        </nav>
       </section>
 
       <GroupSimulator />
